@@ -2,15 +2,13 @@ import React, {useState, useEffect} from 'react';
 import {View, Text, TouchableOpacity, ScrollView, Switch, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import ConfirmModal from './ConfirmModal';
+import {ChevronRightIcon} from './DrawnBadge';
 
 const STORAGE_SETTINGS = '@sportera_settings';
 
 export default function SettingsScreen({navigation}) {
   const insets = useSafeAreaInsets();
   const [notifications, setNotifications] = useState(true);
-  const [clearModal, setClearModal] = useState(null);
-
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_SETTINGS).then(raw => {
       if (raw) try {
@@ -23,22 +21,6 @@ export default function SettingsScreen({navigation}) {
   const toggleNotifications = v => {
     setNotifications(v);
     AsyncStorage.setItem(STORAGE_SETTINGS, JSON.stringify({notifications: v}));
-    if (v) {
-      setClearModal({title: 'Notifications', message: 'You will receive alerts for live matches and bet results. Manage permissions in device Settings.'});
-    }
-  };
-
-  const handleClearCache = () => {
-    setClearModal({
-      title: 'Clear cache',
-      message: 'This will clear all app data (teams, bets, profile, settings). Continue?',
-      buttonText: 'Clear',
-      onConfirm: () => {
-        AsyncStorage.clear().then(() => {
-          setClearModal({title: 'Cache cleared', message: 'All app data has been cleared. Restart the app to apply.'});
-        });
-      },
-    });
   };
 
   return (
@@ -56,30 +38,22 @@ export default function SettingsScreen({navigation}) {
           <View style={st.row}>
             <View style={st.rowLeft}>
               <Text style={st.rowLabel}>Notifications</Text>
-              <Text style={st.rowHint}>Match alerts, bet results</Text>
+              <Text style={st.rowHint}>Match alerts, simulation results</Text>
             </View>
             <Switch value={notifications} onValueChange={toggleNotifications} trackColor={{false: '#2A2325', true: '#CC342D'}} thumbColor="#fff" />
           </View>
         </View>
         <View style={st.section}>
-          <Text style={st.sectionTitle}>Data</Text>
-          <TouchableOpacity style={st.row} onPress={handleClearCache} activeOpacity={0.8}>
-            <Text style={st.rowLabel}>Clear cache</Text>
-            <Text style={st.rowArrow}>›</Text>
+          <Text style={st.sectionTitle}>Support</Text>
+          <TouchableOpacity style={st.row} onPress={() => navigation.navigate('Help')} activeOpacity={0.8}>
+            <View style={st.rowLeft}>
+              <Text style={st.rowLabel}>Support</Text>
+              <Text style={st.rowHint}>FAQ & how-to</Text>
+            </View>
+            <ChevronRightIcon size={18} />
           </TouchableOpacity>
         </View>
       </ScrollView>
-
-      {clearModal && (
-        <ConfirmModal
-          visible={!!clearModal}
-          title={clearModal.title}
-          message={clearModal.message}
-          buttonText={clearModal.buttonText || 'OK'}
-          onClose={() => setClearModal(null)}
-          onConfirm={clearModal.onConfirm}
-        />
-      )}
     </View>
   );
 }
@@ -99,5 +73,4 @@ const st = StyleSheet.create({
   rowLeft: {flex: 1},
   rowLabel: {color: '#F4F3F3', fontSize: 15, fontWeight: '600'},
   rowHint: {color: '#B9B6B6', fontSize: 11, marginTop: 2},
-  rowArrow: {color: '#B9B6B6', fontSize: 18},
 });

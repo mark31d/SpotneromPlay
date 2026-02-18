@@ -3,10 +3,11 @@ import {View, Text, TouchableOpacity, ScrollView, StyleSheet} from 'react-native
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 const FAQ = [
-  {q: 'How do I place a bet?', a: 'Tap odds on any match to add picks to your betslip. Set your stake and tap Place Bet.'},
-  {q: 'What are points?', a: 'Points are virtual currency for fun predictions. No real money is involved.'},
-  {q: 'How do I add teams?', a: 'Go to Account, tap + Add Team, and enter the team name.'},
-  {q: 'How does the leaderboard work?', a: 'Earn points by winning bets. Share your rank to compete with friends.'},
+  {q: 'What is Spotnerom Play?', a: 'A match simulator. You add teams, simulate matches by attack, defense and form, build rating from wins and draws, train teams, and compete on the leaderboard.'},
+  {q: 'How do I simulate a match?', a: 'Go to Play, select your team and opponent, then tap Simulate Match. The result is based on attack, defense and form.'},
+  {q: 'What is rating?', a: 'Rating = wins × 3 + draws. Teams climb the leaderboard by winning and drawing matches.'},
+  {q: 'How do I add teams?', a: 'Go to Account, tap + Add Team, and enter the team name. Each team gets random attack/defense/form stats.'},
+  {q: 'How does the leaderboard work?', a: 'Teams are ranked by rating. More wins and draws = higher rank. Check Match History for full stats.'},
 ];
 
 export default function HelpScreen({navigation}) {
@@ -19,10 +20,10 @@ export default function HelpScreen({navigation}) {
         <TouchableOpacity onPress={() => navigation.goBack()} style={st.backBtn}>
           <Text style={st.backText}>← Back</Text>
         </TouchableOpacity>
-        <Text style={st.title}>Help</Text>
+        <Text style={st.title}>Support</Text>
       </View>
       <ScrollView style={st.scroll} contentContainerStyle={st.scrollCt}>
-        <Text style={st.subtitle}>FAQ & support</Text>
+        <Text style={st.subtitle}>FAQ & how-to</Text>
         {FAQ.map((item, i) => (
           <TouchableOpacity key={i} style={st.faqItem} onPress={() => setExpanded(expanded === i ? null : i)} activeOpacity={0.8}>
             <Text style={st.faqQ}>{item.q}</Text>

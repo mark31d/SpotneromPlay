@@ -10,10 +10,10 @@ import {
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 const SLIDES = [
-  {title: 'Welcome to Spotnerom Play', sub: 'Live scores. Fast picks. Clean odds.'},
-  {title: 'Real-Time Markets', sub: 'Browse odds, pick winners, build your betslip.'},
-  {title: 'Track Everything', sub: 'Stats, lineups, head-to-head — all in one place.'},
-  {title: 'Easy Navigation', sub: 'Home: main menu. Sports: odds & markets. Betslip: place bets. My Bets: history. Account: teams & stats.'},
+  {title: 'Welcome to Spotnerom Play', sub: 'Simulate matches. Build rating. Compete on the leaderboard.'},
+  {title: 'Match Simulator', sub: 'Choose your team and opponent. Matches are simulated by attack, defense and form.'},
+  {title: 'Rating & Stats', sub: 'Teams earn rating from wins and draws. Track history, goals, W/D/L.'},
+  {title: 'Get Started', sub: 'Play: simulate a match. History: past results. Account: manage teams. Settings: Support & preferences. Leaderboard: rank by rating.'},
 ];
 
 export default function OnboardingScreen({navigation}) {
@@ -23,7 +23,7 @@ export default function OnboardingScreen({navigation}) {
 
   const next = () => {
     if (isLast) {
-      navigation.replace('MainMenu');
+      navigation.replace('MainTabs');
     } else {
       setIdx(idx + 1);
     }
@@ -37,7 +37,7 @@ export default function OnboardingScreen({navigation}) {
       <View style={[s.overlay, {paddingTop: insets.top}]}>
         <TouchableOpacity
           style={s.skipBtn}
-          onPress={() => navigation.replace('MainMenu')}>
+          onPress={() => navigation.replace('MainTabs')}>
           <Text style={s.skipText}>Skip</Text>
         </TouchableOpacity>
 

@@ -10,85 +10,31 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
+import ConfirmModal from './ConfirmModal';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {launchImageLibrary} from 'react-native-image-picker';
-import {UserTeamsContext, BetsContext, ProfileContext} from '../App';
+import {UserTeamsContext, ProfileContext} from '../App';
 import TeamInitial from './TeamInitial';
-import {StatIcon} from './DrawnBadge';
-
-const NAV_SPRITE = {src: require('../assets/nav_icons.png'), cols: 5, rows: 1};
-function NavIcon({index, size = 28, tintColor}) {
-  const col = index % NAV_SPRITE.cols;
-  return (
-    <View style={{width: size, height: size, overflow: 'hidden'}}>
-      <Image
-        source={NAV_SPRITE.src}
-        style={[
-          {position: 'absolute', width: NAV_SPRITE.cols * size, height: size, left: -col * size, top: 0},
-          tintColor && {tintColor},
-        ]}
-        resizeMode="stretch"
-      />
-    </View>
-  );
-}
-
-const NAV_ITEMS = [
-  {label: 'Home', idx: 0, route: 'MainMenu'},
-  {label: 'Sports', idx: 1, route: 'OddsMarkets'},
-  {label: '', idx: 2, route: 'Betslip', center: true},
-  {label: 'My Bets', idx: 3, route: 'MyBets'},
-  {label: 'Account', idx: 4, route: null},
-];
-
-/* ── Entertaining stats (not real currency) ── */
-const STATS = [
-  {label: 'Total Points', value: null, badgeIdx: 4},
-  {label: 'Bets Won', value: '47', badgeIdx: 0},
-  {label: 'Win Streak', value: '5', badgeIdx: 1},
-  {label: 'Level', value: 'Pro Predictor', badgeIdx: 5},
-];
+import {StatIcon, CloseIcon, ChevronRightIcon, GoalIcon} from './DrawnBadge';
 
 const MENU_ITEMS = [
   {label: 'Achievements', desc: 'Badges & milestones', badgeIdx: 4, route: 'Achievements'},
-  {label: 'Leaderboard', desc: 'Compete with friends', badgeIdx: 1, route: 'Leaderboard'},
+  {label: 'Leaderboard', desc: 'Teams by rating', badgeIdx: 1, route: 'Leaderboard'},
+  {label: 'Team Training', desc: 'Train muscle groups', badgeIdx: 2, route: 'TeamTraining'},
   {label: 'Settings', desc: 'App preferences', badgeIdx: 2, route: 'Settings'},
-  {label: 'Help', desc: 'FAQ & support', badgeIdx: 3, route: 'Help'},
+  {label: 'Support', desc: 'FAQ & how-to', badgeIdx: 3, route: 'Help'},
 ];
-
-function hash(str) {
-  let h = 0;
-  for (let i = 0; i < str.length; i++) {
-    h = ((h << 5) - h) + str.charCodeAt(i);
-    h |= 0;
-  }
-  return Math.abs(h);
-}
-
-function getRandomStats(teamName) {
-  const h = hash(teamName);
-  return {
-    wins: 10 + (h % 25),
-    losses: 5 + ((h >> 2) % 15),
-    goals: 30 + ((h >> 4) % 50),
-    pts: 100 + ((h >> 6) % 200),
-  };
-}
 
 export default function AccountScreen({navigation}) {
   const insets = useSafeAreaInsets();
-  const {userTeams, addTeam, removeTeam} = useContext(UserTeamsContext);
-  const {totalPoints} = useContext(BetsContext);
+  const {userTeams, teamStats, teamTraining, matchHistory, addTeam, removeTeam, getBaseTeamStats, getRating, getStrength, getLeadership, resetAllData} = useContext(UserTeamsContext);
   const {profile, setUserProfile} = useContext(ProfileContext);
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
+  const [resetModalVisible, setResetModalVisible] = useState(false);
   const [newTeamName, setNewTeamName] = useState('');
   const [editName, setEditName] = useState('');
   const [editPhotoUri, setEditPhotoUri] = useState('');
-
-  const onNav = n => {
-    if (n.route) navigation.navigate(n.route);
-  };
 
   const handleAddTeam = () => {
     addTeam(newTeamName);
@@ -129,6 +75,9 @@ export default function AccountScreen({navigation}) {
   const displayName = profile.userName?.trim() || 'Player';
   const displayPhoto = profile.userPhotoUri;
 
+  const totalWins = matchHistory.filter(m => m.result === 'win').length;
+  const totalMatches = matchHistory.length;
+
   return (
     <View style={[st.root, {paddingTop: insets.top}]}>
       <View style={st.header}>
@@ -143,9 +92,9 @@ export default function AccountScreen({navigation}) {
           </View>
           <View style={st.profileInfo}>
             <Text style={st.profileName}>{displayName}</Text>
-            <Text style={st.profileLevel}>Pro Predictor · Level 12</Text>
+            <Text style={st.profileLevel}>Match Simulator</Text>
             <View style={st.pointsBadge}>
-              <Text style={st.pointsText}>{totalPoints.toLocaleString()} pts</Text>
+              <Text style={st.pointsText}>{totalWins} wins · {totalMatches} matches</Text>
             </View>
           </View>
           <Text style={st.editHint}>Tap to edit</Text>
@@ -155,9 +104,13 @@ export default function AccountScreen({navigation}) {
       <ScrollView style={st.scroll} contentContainerStyle={st.scrollCt}>
         <Text style={st.sectionTitle}>My Teams</Text>
         {userTeams.map(team => {
-          const stats = getRandomStats(team);
+          const base = getBaseTeamStats(team);
+          const stats = {...base, ...(teamStats[team] || {})};
+          const rating = getRating(stats);
+          const strength = getStrength ? getStrength(stats, teamTraining[team] || {}) : (stats.strength ?? 50);
+          const leadership = getLeadership ? getLeadership(stats) : (stats.leadership ?? 1);
           return (
-            <TouchableOpacity key={team} style={st.teamCard} activeOpacity={0.8}>
+            <TouchableOpacity key={team} style={st.teamCard} activeOpacity={0.8} onPress={() => navigation.navigate('Play')}>
               <View style={st.teamCardHeader}>
                 <TeamInitial teamName={team} size={36} />
                 <Text style={st.teamCardName}>{team}</Text>
@@ -165,15 +118,20 @@ export default function AccountScreen({navigation}) {
                   style={st.teamRemove}
                   onPress={() => removeTeam(team)}
                   hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
-                  <Text style={st.teamRemoveText}>✕</Text>
+                  <CloseIcon size={16} />
                 </TouchableOpacity>
               </View>
               <View style={st.teamStatsRow}>
-                <Text style={st.teamStat}>W {stats.wins}</Text>
-                <Text style={st.teamStat}>L {stats.losses}</Text>
-                <Text style={st.teamStat}>⚽ {stats.goals}</Text>
-                <Text style={st.teamStat}>{stats.pts} pts</Text>
+                <Text style={st.teamStat}>W {stats.wins ?? 0}</Text>
+                <Text style={st.teamStat}>D {stats.draws ?? 0}</Text>
+                <Text style={st.teamStat}>L {stats.losses ?? 0}</Text>
+                <View style={st.teamStatRow}>
+                  <GoalIcon size={12} />
+                  <Text style={st.teamStat}>{stats.goalsScored ?? 0}</Text>
+                </View>
+                <Text style={st.teamStat}>{rating} pts</Text>
               </View>
+              <Text style={st.teamStatHint}>A:{stats.attack ?? 0} D:{stats.defense ?? 0} F:{stats.form ?? 0} · P:{strength} L:{leadership}</Text>
             </TouchableOpacity>
           );
         })}
@@ -184,18 +142,13 @@ export default function AccountScreen({navigation}) {
           <Text style={st.addTeamText}>+ Add Team</Text>
         </TouchableOpacity>
 
-        <Text style={st.sectionTitle}>Your Stats</Text>
-        <View style={st.statsGrid}>
-          {STATS.map((s, i) => (
-            <View key={i} style={st.statCard}>
-              <View style={st.statIconWrap}>
-                <StatIcon index={s.badgeIdx} size={24} />
-              </View>
-              <Text style={st.statValue}>{s.value != null ? s.value : `${totalPoints.toLocaleString()} pts`}</Text>
-              <Text style={st.statLabel}>{s.label}</Text>
-            </View>
-          ))}
-        </View>
+        <TouchableOpacity
+          style={st.resetDataBtn}
+          onPress={() => setResetModalVisible(true)}
+          activeOpacity={0.8}>
+          <Text style={st.resetDataText}>Reset data</Text>
+          <Text style={st.resetDataHint}>Clear all teams, matches, stats & profile</Text>
+        </TouchableOpacity>
 
         <Text style={st.sectionTitle}>More</Text>
         {MENU_ITEMS.map((item, i) => (
@@ -207,7 +160,7 @@ export default function AccountScreen({navigation}) {
               <Text style={st.menuLabel}>{item.label}</Text>
               <Text style={st.menuDesc}>{item.desc}</Text>
             </View>
-            <Text style={st.menuArrow}>›</Text>
+            <ChevronRightIcon size={18} />
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -272,20 +225,18 @@ export default function AccountScreen({navigation}) {
         </View>
       </Modal>
 
-      <View style={[st.bottomNav, {paddingBottom: insets.bottom || 16}]}>
-        {NAV_ITEMS.map((n, i) =>
-          n.center ? (
-            <TouchableOpacity key={i} style={st.navCenter} onPress={() => onNav(n)}>
-              <NavIcon index={2} size={28} />
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity key={i} style={st.navItem} onPress={() => onNav(n)}>
-              <NavIcon index={n.idx} size={28} tintColor={n.label === 'Account' ? '#CC342D' : undefined} />
-              <Text style={[st.navLabel, n.label === 'Account' && st.navLabelActive]}>{n.label}</Text>
-            </TouchableOpacity>
-          ),
-        )}
-      </View>
+      <ConfirmModal
+        visible={resetModalVisible}
+        title="Reset data"
+        message="This will clear all app data (teams, match history, stats, profile, settings). Continue?"
+        buttonText="Reset"
+        onClose={() => setResetModalVisible(false)}
+        onConfirm={() => {
+          resetAllData();
+          setResetModalVisible(false);
+        }}
+      />
+      <View style={{height: insets.bottom || 16}} />
     </View>
   );
 }
@@ -312,11 +263,15 @@ const st = StyleSheet.create({
   teamCardHeader: {flexDirection: 'row', alignItems: 'center', marginBottom: 10},
   teamCardName: {flex: 1, color: '#F4F3F3', fontSize: 16, fontWeight: '700', marginLeft: 10},
   teamRemove: {width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(204,52,45,0.2)', alignItems: 'center', justifyContent: 'center'},
-  teamRemoveText: {color: '#CC342D', fontSize: 14, fontWeight: '700'},
-  teamStatsRow: {flexDirection: 'row', gap: 16},
+  teamStatsRow: {flexDirection: 'row', flexWrap: 'wrap', gap: 12, alignItems: 'center'},
+  teamStatRow: {flexDirection: 'row', alignItems: 'center', gap: 4},
   teamStat: {color: '#B9B6B6', fontSize: 12, fontWeight: '600'},
-  addTeamBtn: {backgroundColor: 'rgba(204,52,45,0.2)', borderRadius: 12, padding: 14, marginBottom: 24, borderWidth: 1, borderColor: '#CC342D', borderStyle: 'dashed', alignItems: 'center'},
+  teamStatHint: {color: '#666', fontSize: 10, marginTop: 4},
+  addTeamBtn: {backgroundColor: 'rgba(204,52,45,0.2)', borderRadius: 12, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: '#CC342D', borderStyle: 'dashed', alignItems: 'center'},
   addTeamText: {color: '#CC342D', fontSize: 14, fontWeight: '700'},
+  resetDataBtn: {backgroundColor: 'rgba(204,52,45,0.15)', borderRadius: 14, padding: 20, marginBottom: 24, borderWidth: 2, borderColor: '#CC342D', alignItems: 'center'},
+  resetDataText: {color: '#CC342D', fontSize: 18, fontWeight: '800'},
+  resetDataHint: {color: '#B9B6B6', fontSize: 12, marginTop: 6},
   modalOverlay: {flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', padding: 24},
   modalBox: {backgroundColor: '#1B1A1B', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: '#2A2325'},
   modalTitle: {color: '#F4F3F3', fontSize: 18, fontWeight: '700', marginBottom: 16},
@@ -332,22 +287,10 @@ const st = StyleSheet.create({
   modalCancelText: {color: '#B9B6B6', fontSize: 14, fontWeight: '600'},
   modalAdd: {backgroundColor: '#CC342D', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10},
   modalAddText: {color: '#fff', fontSize: 14, fontWeight: '700'},
-  statsGrid: {flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24},
-  statCard: {width: '47%', backgroundColor: '#1B1A1B', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#2A2325'},
-  statIconWrap: {marginBottom: 6},
-  statValue: {color: '#F4F3F3', fontSize: 14, fontWeight: '800', marginBottom: 2},
-  statLabel: {color: '#B9B6B6', fontSize: 10, fontWeight: '600'},
 
   menuRow: {flexDirection: 'row', alignItems: 'center', backgroundColor: '#1B1A1B', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#2A2325'},
   menuIconWrap: {marginRight: 12},
   menuContent: {flex: 1},
   menuLabel: {color: '#F4F3F3', fontSize: 14, fontWeight: '600'},
   menuDesc: {color: '#B9B6B6', fontSize: 11, marginTop: 2},
-  menuArrow: {color: '#B9B6B6', fontSize: 18, fontWeight: '300'},
-
-  bottomNav: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', backgroundColor: '#1B1A1B', borderTopWidth: 1, borderTopColor: '#2A2325', paddingTop: 8},
-  navItem: {alignItems: 'center', gap: 4, minWidth: 52},
-  navCenter: {width: 56, height: 56, borderRadius: 28, backgroundColor: '#AF1E20', alignItems: 'center', justifyContent: 'center', marginTop: -22, borderWidth: 3, borderColor: '#141214'},
-  navLabel: {color: '#B9B6B6', fontSize: 10, fontWeight: '500'},
-  navLabelActive: {color: '#CC342D'},
 });

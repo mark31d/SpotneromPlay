@@ -12,10 +12,11 @@ import {
   StyleSheet,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {BetslipContext, BetsContext, MatchesContext} from '../App';
+import {PredictionCardContext, PredictionsContext, MatchesContext, UserTeamsContext} from '../App';
+import {generateMatchWithHomeTeam} from '../data/matches';
 import TeamInitial from './TeamInitial';
 import PlayerAvatar from './PlayerAvatar';
-import {LiveBadge, MoreDotsIcon, PlusIcon, SortIndicator} from './DrawnBadge';
+import {LiveBadge, MoreDotsIcon, PlusIcon, SortIndicator, StarIcon} from './DrawnBadge';
 import ConfirmModal from './ConfirmModal';
 
 /* ── Sprite helper (nav only) ── */
@@ -39,23 +40,25 @@ const PLAYERS = [
   {name: 'D. Okafor', avatarIndex: 2, goals: 0, assists: 0, shots: 1, card: 'red'},
 ];
 
-const TABS = ['Live', 'Top', 'Today', 'Odds'];
+const TABS = ['Live', 'Top', 'Today', 'Markets'];
 const CHIPS = ['Football', 'Tennis', 'Basketball', 'Esports'];
 
 const NAV_ITEMS = [
   {label: 'Home', idx: 0, route: 'MainMenu'},
-  {label: 'Sports', idx: 1, route: 'OddsMarkets'},
-  {label: '', idx: 2, route: 'Betslip', center: true},
-  {label: 'My Bets', idx: 3, route: 'MyBets'},
+  {label: 'Sports', idx: 1, route: null},
+  {label: '', idx: 2, route: 'PredictionCard', center: true},
+  {label: 'My Predictions', idx: 3, route: 'MyPredictions'},
   {label: 'Account', idx: 4, route: 'Account'},
 ];
 
 export default function LiveMatchesScreen({navigation}) {
   const insets = useSafeAreaInsets();
   const {matches, refreshMatches} = useContext(MatchesContext);
-  const {selections, addSelection} = useContext(BetslipContext);
+  const {selections, addSelection} = useContext(PredictionCardContext);
+  const {userTeams} = useContext(UserTeamsContext);
 
   const [activeTab, setActiveTab] = useState(0);
+  const [myTeamSelected, setMyTeamSelected] = useState(null);
   const [activeChip, setActiveChip] = useState(0);
   const [searchVisible, setSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -66,8 +69,14 @@ export default function LiveMatchesScreen({navigation}) {
   const [favorites, setFavorites] = useState({});
   const [playerSort, setPlayerSort] = useState('goals');
 
+  const myTeamMatch = useMemo(() => {
+    if (!myTeamSelected) return null;
+    return generateMatchWithHomeTeam(myTeamSelected, Date.now());
+  }, [myTeamSelected]);
+
   const displayMatches = useMemo(() => {
     let list = [...matches];
+    if (myTeamMatch) list = [myTeamMatch, ...list];
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       list = list.filter(
@@ -77,33 +86,33 @@ export default function LiveMatchesScreen({navigation}) {
       );
     }
     if (activeTab === 1) {
-      list.sort((a, b) => b.homeScore + b.awayScore - (a.homeScore + a.awayScore));
+      list.sort((a, b) => (b.homeScore || 0) + (b.awayScore || 0) - ((a.homeScore || 0) + (a.awayScore || 0)));
     }
     if (activeTab === 2) {
       list = list.map(m => ({...m, minute: null, period: '19:30'}));
     }
     return list;
-  }, [matches, activeTab, searchQuery]);
+  }, [matches, myTeamMatch, activeTab, searchQuery]);
 
   const isSelected = (matchId, pick) =>
     selections.some(
       s => s.matchId === matchId && s.market === '1X2' && s.pickLabel === pick,
     );
 
-  const handleOdd = (match, pick, odd) => {
+  const handlePick = (match, pick, pct) => {
     const ml = `${match.homeName} vs ${match.awayName}`;
-    addSelection(match.id, '1X2', pick, odd, ml);
+    addSelection(match.id, '1X2', pick, pct, ml);
   };
 
   const handlePlus = match => {
-    if (!isSelected(match.id, '1') && !isSelected(match.id, 'X') && !isSelected(match.id, '2')) {
+    if (!isSelected(match.id, 'Win') && !isSelected(match.id, 'Draw') && !isSelected(match.id, 'Lose')) {
       const picks = [
-        {label: '1', odd: match.odds1},
-        {label: 'X', odd: match.oddsX},
-        {label: '2', odd: match.odds2},
+        {pick: 'Win', pct: match.pct1},
+        {pick: 'Draw', pct: match.pctX},
+        {pick: 'Lose', pct: match.pct2},
       ];
       const lucky = picks[Math.floor(Math.random() * picks.length)];
-      handleOdd(match, lucky.label, lucky.odd);
+      handlePick(match, lucky.pick, lucky.pct);
     }
   };
 
@@ -115,15 +124,16 @@ export default function LiveMatchesScreen({navigation}) {
     });
   }, [playerSort]);
 
-  const {totalPoints} = useContext(BetsContext);
+  const {totalCoins} = useContext(PredictionsContext);
 
   const onNav = n => {
     if (n.route) navigation.navigate(n.route);
+    else if (n.label === 'Sports') return;
   };
 
   const onTab = i => {
     if (i === 3) {
-      navigation.navigate('OddsMarkets');
+      navigation.navigate('Markets');
     } else {
       setActiveTab(i);
     }
@@ -138,7 +148,7 @@ export default function LiveMatchesScreen({navigation}) {
         </TouchableOpacity>
         <View style={st.topBarRight}>
           <View style={st.balancePill}>
-            <Text style={st.balanceText}>{totalPoints.toLocaleString()} pts</Text>
+            <Text style={st.balanceText}>{totalCoins.toLocaleString()} coins</Text>
           </View>
           <TouchableOpacity style={st.iconBtn} onPress={() => setNotifVisible(true)}>
             <Image source={require('../assets/ic_bell.png')} style={st.iconImg} resizeMode="contain" />
@@ -177,12 +187,36 @@ export default function LiveMatchesScreen({navigation}) {
         </TouchableOpacity>
       </View>
 
+      {/* Set my team */}
+      {userTeams.length > 0 && (
+        <View style={st.myTeamSection}>
+          <Text style={st.myTeamLabel}>Set my team</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={st.myTeamChips}>
+            <TouchableOpacity
+              style={[st.myTeamChip, !myTeamSelected && st.myTeamChipSel]}
+              onPress={() => setMyTeamSelected(null)}
+              activeOpacity={0.8}>
+              <Text style={[st.myTeamChipText, !myTeamSelected && st.myTeamChipTextSel]}>None</Text>
+            </TouchableOpacity>
+            {userTeams.map(t => (
+              <TouchableOpacity
+                key={t}
+                style={[st.myTeamChip, myTeamSelected === t && st.myTeamChipSel]}
+                onPress={() => setMyTeamSelected(myTeamSelected === t ? null : t)}
+                activeOpacity={0.8}>
+                <Text style={[st.myTeamChipText, myTeamSelected === t && st.myTeamChipTextSel]}>{t}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
       {/* Matches + Players */}
       <ScrollView style={st.scroll} contentContainerStyle={st.scrollCt}>
         {displayMatches.map(match => (
           <TouchableOpacity
             key={match.id}
-            style={st.card}
+            style={[st.card, match.id.startsWith('my_') && st.cardMyTeam]}
             activeOpacity={0.85}
             onPress={() => navigation.navigate('MatchDetails', {match})}>
             {/* Header */}
@@ -224,22 +258,22 @@ export default function LiveMatchesScreen({navigation}) {
               <View style={[st.momAway, {flex: 100 - match.momentum}]} />
             </View>
 
-            {/* Odds */}
+            {/* Predictions */}
             <View style={st.oddsRow}>
               {[
-                {label: '1', val: match.odds1},
-                {label: 'X', val: match.oddsX},
-                {label: '2', val: match.odds2},
+                {label: 'Win', pick: 'Win', display: match.homeName, pct: match.pct1},
+                {label: 'Draw', pick: 'Draw', display: 'Draw', pct: match.pctX},
+                {label: 'Lose', pick: 'Lose', display: match.awayName, pct: match.pct2},
               ].map(o => (
                 <TouchableOpacity
                   key={o.label}
-                  style={[st.oddPill, isSelected(match.id, o.label) && st.oddPillSel]}
+                  style={[st.oddPill, isSelected(match.id, o.pick) && st.oddPillSel]}
                   onPress={e => {
                     e.stopPropagation?.();
-                    handleOdd(match, o.label, o.val);
+                    handlePick(match, o.pick, o.pct);
                   }}>
-                  <Text style={[st.oddLabel, isSelected(match.id, o.label) && {color: '#fff'}]}>{o.label}</Text>
-                  <Text style={[st.oddVal, isSelected(match.id, o.label) && {color: '#fff'}]}> {o.val.toFixed(2)}</Text>
+                  <Text style={[st.oddLabel, isSelected(match.id, o.pick) && {color: '#fff'}]} numberOfLines={1}>{o.display}</Text>
+                  <Text style={[st.oddVal, isSelected(match.id, o.pick) && {color: '#fff'}]}> {o.pct}%</Text>
                 </TouchableOpacity>
               ))}
               <TouchableOpacity
@@ -373,7 +407,8 @@ export default function LiveMatchesScreen({navigation}) {
                 if (moreMatch) setFavorites(f => ({...f, [moreMatch.id]: !f[moreMatch.id]}));
                 setMoreVisible(false);
               }}>
-              <Text style={st.moreText}>{moreMatch && favorites[moreMatch.id] ? '★ Unfavorite' : '☆ Favorite'}</Text>
+              <StarIcon size={18} filled={!!(moreMatch && favorites[moreMatch.id])} />
+              <Text style={st.moreText}>{moreMatch && favorites[moreMatch.id] ? 'Unfavorite' : 'Favorite'}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={st.moreRow} onPress={() => {
               setMoreVisible(false);
@@ -426,6 +461,14 @@ const st = StyleSheet.create({
   chipsCt: {paddingHorizontal: 14, gap: 8, paddingVertical: 10},
   refreshChip: {paddingHorizontal: 12, paddingVertical: 8, backgroundColor: '#CC342D', borderRadius: 20, marginLeft: 8},
   refreshChipText: {color: '#fff', fontSize: 11, fontWeight: '700'},
+  myTeamSection: {paddingHorizontal: 14, marginBottom: 10},
+  myTeamLabel: {color: '#B9B6B6', fontSize: 11, fontWeight: '700', marginBottom: 8},
+  myTeamChips: {marginBottom: 4},
+  myTeamChip: {backgroundColor: '#1B1A1B', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10, marginRight: 8, borderWidth: 1, borderColor: '#2A2325'},
+  myTeamChipSel: {borderColor: '#CC342D', backgroundColor: 'rgba(204,52,45,0.2)'},
+  myTeamChipText: {color: '#B9B6B6', fontSize: 13, fontWeight: '600'},
+  myTeamChipTextSel: {color: '#F4F3F3'},
+  cardMyTeam: {borderColor: '#35D07F', borderWidth: 1, backgroundColor: 'rgba(53,208,127,0.08)'},
   chip: {paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20, backgroundColor: '#1B1A1B', borderWidth: 1, borderColor: '#2A2325'},
   chipActive: {backgroundColor: '#CC342D', borderColor: '#CC342D'},
   chipText: {fontSize: 10, fontWeight: '600', color: '#B9B6B6'},
@@ -487,6 +530,6 @@ const st = StyleSheet.create({
   notifDot: {width: 6, height: 6, borderRadius: 3, backgroundColor: '#CC342D'},
   notifText: {color: '#F4F3F3', fontSize: 13},
   moreBox: {backgroundColor: '#1B1A1B', borderRadius: 16, padding: 8, marginHorizontal: 40, marginBottom: 100},
-  moreRow: {paddingVertical: 14, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: '#2A2325'},
+  moreRow: {flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 14, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: '#2A2325'},
   moreText: {color: '#F4F3F3', fontSize: 14, fontWeight: '500'},
 });

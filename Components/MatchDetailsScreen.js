@@ -9,7 +9,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {BetslipContext} from '../App';
+import {PredictionCardContext} from '../App';
 import TeamInitial from './TeamInitial';
 import PlayerAvatar from './PlayerAvatar';
 import {LiveBadge} from './DrawnBadge';
@@ -38,18 +38,13 @@ const H2H_DATA = [
   {date: '2025-05-20', home: 0, away: 0},
 ];
 
-const QUICK_MARKETS = [
-  {market: '1X2', picks: [{l: '1', v: 1.65}, {l: 'X', v: 3.9}, {l: '2', v: 4.8}]},
-  {market: 'O/U 2.5', picks: [{l: 'Over', v: 1.85}, {l: 'Under', v: 1.95}]},
-  {market: 'BTTS', picks: [{l: 'Yes', v: 1.7}, {l: 'No', v: 2.1}]},
-];
 
 const SEGS = ['Stats', 'Lineups', 'H2H', 'Markets'];
 
 export default function MatchDetailsScreen({route, navigation}) {
   const {match} = route.params;
   const insets = useSafeAreaInsets();
-  const {selections, addSelection, totalOdds} = useContext(BetslipContext);
+  const {selections, addSelection} = useContext(PredictionCardContext);
 
   const [seg, setSeg] = useState(0);
   const [fav, setFav] = useState(false);
@@ -76,7 +71,7 @@ export default function MatchDetailsScreen({route, navigation}) {
 
   const handleSeg = i => {
     if (i === 3) {
-      navigation.navigate('OddsMarkets', {preselectMatchId: match.id});
+      navigation.navigate('Markets', {preselectMatchId: match.id});
     } else {
       setSeg(i);
     }
@@ -134,7 +129,7 @@ export default function MatchDetailsScreen({route, navigation}) {
       {/* Segments */}
       <View style={st.segRow}>
         {SEGS.map((s2, i) => (
-          <TouchableOpacity key={s2} style={[st.segItem, seg === i && st.segActive]} onPress={() => handleSeg(i)}>
+          <TouchableOpacity key={s2} style={[st.segItem, seg === i && st.segActive]} onPress={() => handleSeg(i)} activeOpacity={1}>
             <Text style={[st.segText, seg === i && st.segTextActive]}>{s2}</Text>
           </TouchableOpacity>
         ))}
@@ -148,14 +143,14 @@ export default function MatchDetailsScreen({route, navigation}) {
             <View style={st.chartCard}>
               <Text style={st.chartTitle}>WIN PROBABILITY</Text>
               <View style={st.wpBar}>
-                <View style={[st.wpHome, {flex: 58}]}>
-                  <Text style={st.wpLabel}>58%</Text>
+                <View style={[st.wpHome, {flex: match.pct1 || 40}]}>
+                  <Text style={st.wpLabel}>{match.pct1 || 40}%</Text>
                 </View>
-                <View style={[st.wpDraw, {flex: 22}]}>
-                  <Text style={st.wpLabelDark}>22%</Text>
+                <View style={[st.wpDraw, {flex: match.pctX || 30}]}>
+                  <Text style={st.wpLabelDark}>{match.pctX || 30}%</Text>
                 </View>
-                <View style={[st.wpAway, {flex: 20}]}>
-                  <Text style={st.wpLabel}>20%</Text>
+                <View style={[st.wpAway, {flex: match.pct2 || 30}]}>
+                  <Text style={st.wpLabel}>{match.pct2 || 30}%</Text>
                 </View>
               </View>
               <View style={st.wpLegend}>
@@ -212,14 +207,14 @@ export default function MatchDetailsScreen({route, navigation}) {
               <View style={st.tblHeader}>
                 <Text style={[st.th, {flex: 2.5}]}>Player</Text>
                 <Text style={st.th}>Pos</Text>
-                <TouchableOpacity onPress={() => setSortKey('rating')} style={st.thBtn}>
+                <TouchableOpacity onPress={() => setSortKey('rating')} style={st.thBtn} activeOpacity={1}>
                   <Text style={[st.th, sortKey === 'rating' && {color: '#CC342D'}]}>Rating</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => setSortKey('goals')} style={st.thBtn}>
+                <TouchableOpacity onPress={() => setSortKey('goals')} style={st.thBtn} activeOpacity={1}>
                   <Text style={[st.th, sortKey === 'goals' && {color: '#CC342D'}]}>G</Text>
                 </TouchableOpacity>
                 <Text style={st.th}>A</Text>
-                <TouchableOpacity onPress={() => setSortKey('cards')} style={st.thBtn}>
+                <TouchableOpacity onPress={() => setSortKey('cards')} style={st.thBtn} activeOpacity={1}>
                   <Text style={[st.th, sortKey === 'cards' && {color: '#CC342D'}]}>Cards</Text>
                 </TouchableOpacity>
               </View>
@@ -244,24 +239,28 @@ export default function MatchDetailsScreen({route, navigation}) {
 
             {/* Quick Markets */}
             <View style={st.statsCard}>
-              <Text style={st.chartTitle}>QUICK MARKETS</Text>
+              <Text style={st.chartTitle}>QUICK PICKS</Text>
               <View style={st.qmTabs}>
-                {QUICK_MARKETS.map((m, i) => (
-                  <TouchableOpacity key={i} style={[st.qmTab, quickMarket === i && st.qmTabActive]} onPress={() => setQuickMarket(i)}>
-                    <Text style={[st.qmTabText, quickMarket === i && {color: '#fff'}]}>{m.market}</Text>
+                {['1X2', 'O/U', 'BTTS'].map((mk, i) => (
+                  <TouchableOpacity key={mk} style={[st.qmTab, quickMarket === i && st.qmTabActive]} onPress={() => setQuickMarket(i)} activeOpacity={1}>
+                    <Text style={[st.qmTabText, quickMarket === i && {color: '#fff'}]}>{mk}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
               <View style={st.qmPicks}>
-                {QUICK_MARKETS[quickMarket].picks.map((p, i) => (
+                {(match.markets?.[['1X2', 'O/U', 'BTTS'][quickMarket]]?.picks || []).map((p, i) => {
+                  const mk = ['1X2', 'O/U', 'BTTS'][quickMarket];
+                  const display = mk === '1X2' ? (p.l === 'Win' ? match.homeName : p.l === 'Lose' ? match.awayName : 'Draw') : p.l;
+                  return (
                   <TouchableOpacity
                     key={i}
-                    style={[st.qmPill, isSelected(match.id, QUICK_MARKETS[quickMarket].market, p.l) && st.qmPillSel]}
-                    onPress={() => handleOdd(QUICK_MARKETS[quickMarket].market, p.l, p.v)}>
-                    <Text style={[st.qmPillLabel, isSelected(match.id, QUICK_MARKETS[quickMarket].market, p.l) && {color: '#fff'}]}>{p.l}</Text>
-                    <Text style={[st.qmPillVal, isSelected(match.id, QUICK_MARKETS[quickMarket].market, p.l) && {color: '#fff'}]}>{p.v.toFixed(2)}</Text>
+                    style={[st.qmPill, isSelected(match.id, mk, p.l) && st.qmPillSel]}
+                    onPress={() => handleOdd(mk, p.l, p.v)}
+                    activeOpacity={1}>
+                    <Text style={[st.qmPillLabel, isSelected(match.id, mk, p.l) && {color: '#fff'}]} numberOfLines={1}>{display}</Text>
+                    <Text style={[st.qmPillVal, isSelected(match.id, mk, p.l) && {color: '#fff'}]}>{p.v}%</Text>
                   </TouchableOpacity>
-                ))}
+                );})}
               </View>
             </View>
           </>
@@ -300,14 +299,13 @@ export default function MatchDetailsScreen({route, navigation}) {
         )}
       </ScrollView>
 
-      {/* Sticky Betslip */}
-      <View style={[st.stickyBs, {paddingBottom: insets.bottom || 16}]}>
+      {/* Sticky Prediction Card */}
+      <View style={[st.stickyPc, {paddingBottom: insets.bottom || 16}]}>
         <View>
-          <Text style={st.bsInfo}>{selCount} Selection{selCount !== 1 ? 's' : ''}</Text>
-          {selCount > 0 && <Text style={st.bsOdds}>@ {totalOdds.toFixed(2)}</Text>}
+          <Text style={st.pcInfo}>{selCount} Pick{selCount !== 1 ? 's' : ''}</Text>
         </View>
-        <TouchableOpacity style={st.bsBtn} onPress={() => navigation.navigate('Betslip')}>
-          <Text style={st.bsBtnText}>Open Betslip</Text>
+        <TouchableOpacity style={st.pcBtn} onPress={() => navigation.navigate('PredictionCard')}>
+          <Text style={st.pcBtnText}>Open Prediction Card</Text>
         </TouchableOpacity>
       </View>
 
@@ -403,9 +401,9 @@ const st = StyleSheet.create({
   h2hTeam: {color: '#F4F3F3', fontSize: 12, fontWeight: '600', flex: 1},
   h2hResult: {color: '#F4F3F3', fontSize: 18, fontWeight: '800', letterSpacing: 2},
 
-  stickyBs: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#1B1A1B', borderTopWidth: 1, borderTopColor: '#2A2325', paddingHorizontal: 14, paddingTop: 8},
-  bsInfo: {color: '#F4F3F3', fontSize: 12, fontWeight: '600'},
-  bsOdds: {color: '#B9B6B6', fontSize: 10, marginTop: 1},
-  bsBtn: {backgroundColor: '#AF1E20', paddingHorizontal: 20, paddingVertical: 9, borderRadius: 10, shadowColor: '#AF1E20', shadowOpacity: 0.3, shadowRadius: 10, elevation: 4},
-  bsBtnText: {color: '#fff', fontSize: 12, fontWeight: '700'},
+  stickyPc: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#1B1A1B', borderTopWidth: 1, borderTopColor: '#2A2325', paddingHorizontal: 14, paddingTop: 8},
+  pcInfo: {color: '#F4F3F3', fontSize: 12, fontWeight: '600'},
+  pcMultiplier: {color: '#B9B6B6', fontSize: 10, marginTop: 1},
+  pcBtn: {backgroundColor: '#AF1E20', paddingHorizontal: 20, paddingVertical: 9, borderRadius: 10, shadowColor: '#AF1E20', shadowOpacity: 0.3, shadowRadius: 10, elevation: 4},
+  pcBtnText: {color: '#fff', fontSize: 12, fontWeight: '700'},
 });

@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
-import {BetsContext} from '../App';
+import {PredictionsContext} from '../App';
 
 const NAV_SPRITE = {src: require('../assets/nav_icons.png'), cols: 5, rows: 1};
 
@@ -29,97 +29,78 @@ function NavIcon({index, size = 28, tintColor}) {
   );
 }
 
-const TABS = ['Active', 'Settled'];
 
 const NAV_ITEMS = [
   {label: 'Home', idx: 0, route: 'MainMenu'},
-  {label: 'Sports', idx: 1, route: 'OddsMarkets'},
-  {label: '', idx: 2, route: 'Betslip', center: true},
-  {label: 'My Bets', idx: 3, route: null},
+  {label: 'Sports', idx: 1, route: 'LiveMatches'},
+  {label: '', idx: 2, route: 'PredictionCard', center: true},
+  {label: 'My Predictions', idx: 3, route: null},
   {label: 'Account', idx: 4, route: 'Account'},
 ];
 
-export default function MyBetsScreen({navigation}) {
+export default function MyPredictionsScreen({navigation}) {
   const insets = useSafeAreaInsets();
-  const {betHistory} = useContext(BetsContext);
-  const [activeTab, setActiveTab] = useState(0);
+  const {predictionHistory} = useContext(PredictionsContext);
 
-  const displayBets = activeTab === 0
-    ? betHistory.filter(b => b.status === 'pending')
-    : betHistory.filter(b => b.status === 'won' || b.status === 'lost');
-
-  const totalPts = betHistory.filter(b => b.status === 'won').reduce((a, b) => a + (b.pts || 0), 0);
+  const displayPredictions = predictionHistory.filter(b => b.status === 'correct' || b.status === 'incorrect');
+  const correctCount = predictionHistory.filter(b => b.status === 'correct').length;
 
   const onNav = n => {
     if (n.route) navigation.navigate(n.route);
   };
 
   const statusColor = s => {
-    if (s === 'won') return '#35D07F';
-    if (s === 'lost') return '#CC342D';
+    if (s === 'correct') return '#35D07F';
+    if (s === 'incorrect') return '#CC342D';
     return '#F5C542';
   };
 
   const statusLabel = s => {
-    if (s === 'won') return 'Won';
-    if (s === 'lost') return 'Lost';
+    if (s === 'correct') return 'Correct';
+    if (s === 'incorrect') return 'Incorrect';
     return 'Pending';
   };
 
   return (
     <View style={[st.root, {paddingTop: insets.top}]}>
       <View style={st.header}>
-        <Text style={st.title}>My Bets</Text>
+        <Text style={st.title}>My Predictions</Text>
         <View style={st.statsRow}>
           <View style={st.statPill}>
-            <Text style={st.statLabel}>Total Won</Text>
-            <Text style={st.statVal}>{totalPts} pts</Text>
+            <Text style={st.statLabel}>Correct</Text>
+            <Text style={st.statVal}>{correctCount}</Text>
           </View>
         </View>
       </View>
 
-      <View style={st.tabsRow}>
-        {TABS.map((t, i) => (
-          <TouchableOpacity
-            key={t}
-            style={[st.tab, activeTab === i && st.tabActive]}
-            onPress={() => setActiveTab(i)}>
-            <Text style={[st.tabText, activeTab === i && st.tabTextActive]}>{t}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
       <ScrollView style={st.scroll} contentContainerStyle={st.scrollCt}>
-        {displayBets.length === 0 ? (
+        {displayPredictions.length === 0 ? (
           <View style={st.empty}>
             <View style={st.emptyIconWrap}>
               <NavIcon index={3} size={48} />
             </View>
-            <Text style={st.emptyTitle}>No bets yet</Text>
+            <Text style={st.emptyTitle}>No predictions yet</Text>
             <Text style={st.emptySub}>
-              {activeTab === 0 ? 'Your active bets will appear here.' : 'Your settled bets will appear here.'}
+              Make picks on matches and submit to see your results here.
             </Text>
             <TouchableOpacity style={st.ctaBtn} onPress={() => navigation.navigate('LiveMatches')}>
               <Text style={st.ctaText}>Browse Matches</Text>
             </TouchableOpacity>
           </View>
         ) : (
-          displayBets.map(bet => (
-            <View key={bet.id} style={st.card}>
+          displayPredictions.map(pred => (
+            <View key={pred.id} style={st.card}>
               <View style={st.cardHeader}>
-                <Text style={st.matchText}>{bet.match}</Text>
-                <View style={[st.statusBadge, {backgroundColor: statusColor(bet.status) + '30'}]}>
-                  <Text style={[st.statusText, {color: statusColor(bet.status)}]}>{statusLabel(bet.status)}</Text>
+                <Text style={st.matchText}>{pred.match}</Text>
+                <View style={[st.statusBadge, {backgroundColor: statusColor(pred.status) + '30'}]}>
+                  <Text style={[st.statusText, {color: statusColor(pred.status)}]}>{statusLabel(pred.status)}</Text>
                 </View>
               </View>
               <View style={st.cardRow}>
-                <Text style={st.pickLabel}>{bet.pick}</Text>
-                <Text style={st.oddText}>@ {bet.odd.toFixed(2)}</Text>
+                <Text style={st.pickLabel}>{pred.pick}</Text>
               </View>
-              {(bet.status === 'won' || bet.status === 'lost') && (
-                <Text style={[st.ptsText, {color: statusColor(bet.status)}]}>
-                  {bet.status === 'won' ? '+' : ''}{bet.pts} pts
-                </Text>
+              {pred.message && (
+                <Text style={[st.messageText, {color: statusColor(pred.status)}]}>{pred.message}</Text>
               )}
             </View>
           ))
@@ -134,8 +115,8 @@ export default function MyBetsScreen({navigation}) {
             </TouchableOpacity>
           ) : (
             <TouchableOpacity key={i} style={st.navItem} onPress={() => onNav(n)}>
-              <NavIcon index={n.idx} size={28} tintColor={n.label === 'My Bets' ? '#CC342D' : undefined} />
-              <Text style={[st.navLabel, n.label === 'My Bets' && st.navLabelActive]}>{n.label}</Text>
+              <NavIcon index={n.idx} size={28} tintColor={n.label === 'My Predictions' ? '#CC342D' : undefined} />
+              <Text style={[st.navLabel, n.label === 'My Predictions' && st.navLabelActive]}>{n.label}</Text>
             </TouchableOpacity>
           ),
         )}
@@ -176,8 +157,7 @@ const st = StyleSheet.create({
   statusText: {fontSize: 10, fontWeight: '700'},
   cardRow: {flexDirection: 'row', alignItems: 'center', gap: 8},
   pickLabel: {color: '#CC342D', fontSize: 13, fontWeight: '700'},
-  oddText: {color: '#B9B6B6', fontSize: 12},
-  ptsText: {fontSize: 14, fontWeight: '800', marginTop: 6},
+  messageText: {fontSize: 13, fontWeight: '600', marginTop: 8, fontStyle: 'italic'},
 
   bottomNav: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', backgroundColor: '#1B1A1B', borderTopWidth: 1, borderTopColor: '#2A2325', paddingTop: 8},
   navItem: {alignItems: 'center', gap: 4, minWidth: 52},

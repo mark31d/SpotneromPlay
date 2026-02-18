@@ -1,14 +1,14 @@
 import React from 'react';
 import {View, Text, TouchableOpacity, ScrollView, StyleSheet} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {StatIcon} from './DrawnBadge';
+import {StatIcon, CheckIcon} from './DrawnBadge';
 
 const ACHIEVEMENTS = [
-  {id: '1', title: 'First Bet', desc: 'Place your first prediction', iconIdx: 0, unlocked: true},
-  {id: '2', title: 'Hot Streak', desc: 'Win 5 bets in a row', iconIdx: 1, unlocked: true},
-  {id: '3', title: 'Century', desc: 'Reach 100 points', iconIdx: 4, unlocked: true},
-  {id: '4', title: 'Pro Predictor', desc: 'Win 25 bets', iconIdx: 5, unlocked: false},
-  {id: '5', title: 'Accumulator King', desc: 'Win a 5-fold bet', iconIdx: 0, unlocked: false},
+  {id: '1', title: 'First Match', desc: 'Simulate your first match', iconIdx: 0, unlocked: true},
+  {id: '2', title: 'First Win', desc: 'Win your first match', iconIdx: 1, unlocked: true},
+  {id: '3', title: 'Rating 10', desc: 'Reach 10 rating points', iconIdx: 4, unlocked: true},
+  {id: '4', title: 'Hot Streak', desc: 'Win 5 matches in a row', iconIdx: 5, unlocked: false},
+  {id: '5', title: 'Century', desc: 'Reach 100 rating points', iconIdx: 0, unlocked: false},
   {id: '6', title: 'Loyal Fan', desc: 'Add 5 teams', iconIdx: 1, unlocked: false},
 ];
 
@@ -35,7 +35,7 @@ export default function AchievementsScreen({navigation}) {
               <Text style={[st.cardDesc, !a.unlocked && st.textMuted]}>{a.desc}</Text>
             </View>
             {a.unlocked ? (
-              <Text style={st.badge}>✓</Text>
+              <CheckIcon size={20} />
             ) : (
               <Text style={st.locked}>Locked</Text>
             )}
@@ -62,6 +62,5 @@ const st = StyleSheet.create({
   cardTitle: {color: '#F4F3F3', fontSize: 15, fontWeight: '700', marginBottom: 2},
   cardDesc: {color: '#B9B6B6', fontSize: 12},
   textMuted: {color: '#666'},
-  badge: {color: '#35D07F', fontSize: 18, fontWeight: '800'},
   locked: {color: '#666', fontSize: 11, fontWeight: '600'},
 });

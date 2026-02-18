@@ -1,4 +1,4 @@
-/* Random outcome settlement for bets */
+/* Random outcome settlement for predictions */
 
 function seededRandom(seed) {
   const x = Math.sin(seed) * 10000;
@@ -25,10 +25,13 @@ function getRandomOutcome(market, matchId, seed) {
   return null;
 }
 
+const PICK_TO_OUTCOME = {win: '1', draw: 'x', lose: '2', over: 'over', under: 'under', yes: 'yes', no: 'no'};
+
 export function settleSelection(market, pickLabel, matchId) {
   const outcome = getRandomOutcome(market, matchId, Date.now());
   const a = String(outcome || '').trim().toLowerCase();
-  const b = String(pickLabel || '').trim().toLowerCase();
-  const won = a && b && a === b;
-  return {outcome, won};
+  let b = String(pickLabel || '').trim().toLowerCase();
+  if (market === '1X2' && PICK_TO_OUTCOME[b] !== undefined) b = PICK_TO_OUTCOME[b];
+  const correct = a && b && a === b;
+  return {outcome, correct};
 }

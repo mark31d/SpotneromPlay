@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Spotnerom Play</string>
+    <string name="app_description">Match simulator. Simulate matches, build rating, train teams, compete on the leaderboard.</string>
 </resources>

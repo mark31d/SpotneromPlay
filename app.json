@@ -1,4 +1,5 @@
 {
   "name": "SpotneromPlay",
-  "displayName": "Spotnerom Play"
+  "displayName": "Spotnerom Play",
+  "description": "Match simulator. Choose teams, simulate matches by attack, defense and form. Build rating, train teams, compete on the leaderboard."
 }

@@ -35,6 +35,46 @@ export function SortIndicator({size = 10}) {
   );
 }
 
+export function CloseIcon({size = 18, color = '#CC342D'}) {
+  const w = size * 0.12;
+  return (
+    <View style={[s.closeWrap, {width: size, height: size}]}>
+      <View style={[s.closeLine, {width: size * 1.4, height: w, backgroundColor: color}, s.closeLine1]} />
+      <View style={[s.closeLine, {width: size * 1.4, height: w, backgroundColor: color}, s.closeLine2]} />
+    </View>
+  );
+}
+
+export function ChevronRightIcon({size = 16, color = '#B9B6B6'}) {
+  return (
+    <Text style={[s.chevronText, {fontSize: size * 1.1, color}]}>›</Text>
+  );
+}
+
+export function StarIcon({size = 18, filled = false, color = '#CC342D'}) {
+  return (
+    <View style={[s.starWrap, {width: size, height: size, borderColor: color}]}>
+      {filled && <View style={[s.starFill, {backgroundColor: color}]} />}
+    </View>
+  );
+}
+
+export function CheckIcon({size = 18, color = '#35D07F'}) {
+  const w = size * 0.15;
+  return (
+    <View style={[s.checkWrap, {width: size, height: size, transform: [{rotate: '180deg'}]}]}>
+      <View style={[s.checkLine, {width: size * 0.6, height: w, backgroundColor: color}, s.checkShort]} />
+      <View style={[s.checkLine, {width: size * 0.35, height: w, backgroundColor: color}, s.checkLong]} />
+    </View>
+  );
+}
+
+export function GoalIcon({size = 14, color = '#B9B6B6'}) {
+  return (
+    <View style={[s.goalIcon, {width: size, height: size, borderRadius: size / 2, borderColor: color}]} />
+  );
+}
+
 export function StatIcon({index, size = 24}) {
   const letters = ['W', 'S', 'L', '?', 'P', 'L'];
   const colors = ['#35D07F', '#F5C542', '#B9B6B6', '#9B59B6', '#CC342D', '#4A90D9'];
@@ -56,4 +96,16 @@ const s = StyleSheet.create({
   sortDot: {backgroundColor: '#CC342D'},
   statIcon: {alignItems: 'center', justifyContent: 'center'},
   statIconText: {},
+  closeWrap: {alignItems: 'center', justifyContent: 'center'},
+  closeLine: {position: 'absolute', borderRadius: 2},
+  closeLine1: {transform: [{rotate: '45deg'}]},
+  closeLine2: {transform: [{rotate: '-45deg'}]},
+  chevronText: {fontWeight: '600'},
+  starWrap: {borderWidth: 2, borderRadius: 4, alignItems: 'center', justifyContent: 'center'},
+  starFill: {position: 'absolute', width: '70%', height: '70%', borderRadius: 2},
+  checkWrap: {alignItems: 'center', justifyContent: 'center'},
+  checkLine: {position: 'absolute', borderRadius: 2},
+  checkShort: {transform: [{rotate: '-45deg'}], bottom: '45%', left: '10%'},
+  checkLong: {transform: [{rotate: '45deg'}], top: '35%', right: '15%'},
+  goalIcon: {borderWidth: 2},
 });
