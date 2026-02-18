@@ -2,25 +2,33 @@
 
 ---
 
+## Short Description (alternative)
+
+Spotnerom Play is a team match simulator where you create squads, simulate matches, and test your strategy — all in a fun, competitive environment. Win matches and draws, compete on the leaderboard, unlock achievements, and see how far your teams can climb.
+
+**Character count: 268**
+
+---
+
 ## Promotional Text (170 characters max)
 
-Simulate matches, build rating, climb the leaderboard. Create teams, train them, and compete. Pure sports simulation fun.
+Simulate matches, climb the leaderboard. Create teams, train them, and compete. Pure sports simulation fun.
 
-**Character count: 109**
+**Character count: 99**
 
 ---
 
 ## Description (3000–3500 characters) — USE THIS
 
-Spotnerom Play is a team match simulator where you create teams, simulate matches, and compete on the leaderboard. Build your squad, train your players, and watch your rating grow with every win and draw.
+Spotnerom Play is a team match simulator where you create teams, simulate matches, and compete on the leaderboard. Build your squad, train your players, and climb the ranks with every win and draw.
 
 **HOW IT WORKS**
 
 Create your teams in Account, give them names, and each team gets random stats for attack, defense, and form. Go to Play, pick your team and an opponent, then tap Simulate Match. The result is calculated from both teams' stats, so stronger and better-trained teams have a real advantage.
 
-**RATING & LEADERBOARD**
+**LEADERBOARD**
 
-Rating = wins × 3 + draws. Win matches to climb the leaderboard and see how your teams compare. Every match counts, and every draw adds points too.
+Win matches and draws to climb the leaderboard and see how your teams compare. Every match counts.
 
 **TEAM TRAINING**
 
@@ -35,7 +43,7 @@ After each match, see detailed stats: shots on target, possession, corners, foul
 • Create and manage multiple teams
 • Simulate matches with realistic stats
 • Train teams to increase strength
-• Leaderboard ranked by rating
+• Leaderboard by wins and draws
 • Full match history with detailed stats
 • Profile with photo and name
 • Achievements and milestones
@@ -64,6 +72,6 @@ Download Spotnerom Play and start building your team legacy today.
 
 ## Keywords (100 characters max)
 
-sports,match,simulator,manager,teams,rating,leaderboard,training,strategy,game,football,soccer,hockey
+sports,match,simulator,manager,teams,leaderboard,training,strategy,game,football,soccer,hockey
 
-**Character count: 95**
+**Character count: 93**
